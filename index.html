@@ -157,7 +157,7 @@
         <button id="tabInspiration" class="px-6 py-3 bg-white text-custom border border-custom rounded-md hover:bg-custom-light transition-colors font-medium">
             🐭 奇鼠妙想
         </button>
-        <button onclick="openSyncModal()" class="px-6 py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium">
+        <button onclick="openCloudModal()" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium">
             <i class="fas fa-cloud"></i> 云端同步
         </button>
     </div>
@@ -312,37 +312,30 @@
         </div>
     </div>
 
-    <div id="syncModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
+    <div id="cloudModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
         <div class="absolute inset-0 bg-black bg-opacity-50"></div>
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-8 relative z-10 border border-custom/20 art-border">
-            <button id="closeSyncModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors">
-                <i class="fas fa-times text-xl"></i>
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 relative z-10">
+            <button id="closeCloudModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
             </button>
-            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                <i class="fas fa-cloud text-blue-500 mr-2"></i>云端同步（GitHub Gist）
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fas fa-cloud text-blue-600 mr-2"></i>云端数据同步
             </h3>
-            <div class="space-y-4">
+            <div class="space-y-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">GitHub 私人令牌（仅Gist权限）</label>
-                    <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-sm font-medium mb-1">GitHub Token（仅gist权限）</label>
+                    <input type="password" id="ghToken" class="w-full px-3 py-2 border rounded" placeholder="ghp_...">
                 </div>
-                <div id="gistIdContainer" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Gist ID（首次上传后自动生成，可手动输入）</label>
-                    <input type="text" id="gistId" placeholder="请输入Gist ID" 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="uploadToGist()" class="flex-1 px-4 py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                        <i class="fas fa-cloud-upload mr-1"></i> 上传数据到云端
-                    </button>
-                    <button onclick="downloadFromGist()" class="flex-1 px-4 py-3 bg-green-500 text-white rounded-md hover:bg-green-600">
-                        <i class="fas fa-cloud-download mr-1"></i> 从云端恢复数据
-                    </button>
-                </div>
-                <p class="text-xs text-gray-500">
-                    令牌只需获取一次，数据加密存储在GitHub，仅你自己可见<br>
-                    所有设备登录同一GitHub即可同步
+                <button onclick="backupAllToCloud()" class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    👉 一键备份【全部数据】到云端
+                </button>
+                <button onclick="restoreAllFromCloud()" class="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    👈 一键恢复【云端所有数据】到本地
+                </button>
+                <p class="text-xs text-gray-500 mt-2">
+                    备份：鼠闻+卷宗+章节+图片全部上传<br>
+                    恢复：覆盖本地，与云端完全一致<br>
+                    多设备用同一Token即可互通
                 </p>
             </div>
         </div>
@@ -374,6 +367,9 @@ let selectedCatalogId = null;
 let selectedSubCatalogId = null;
 let exportType = '';
 
+const SYNC_GIST_FILENAME = "huangdi_rizhi_full_data.json";
+const SYNC_GIST_DESC = "皇帝之日志 - 全量同步数据";
+
 document.addEventListener('DOMContentLoaded', function(){
     const tabDailyLog = document.getElementById('tabDailyLog');
     const tabInspiration = document.getElementById('tabInspiration');
@@ -398,9 +394,9 @@ document.addEventListener('DOMContentLoaded', function(){
         renderCatalogs();
     });
 
-    document.getElementById('closeSyncModal').addEventListener('click',()=>{
-        document.getElementById('syncModal').classList.add('hidden');
-    });
+    document.getElementById('closeCloudModal').onclick = ()=>{
+        document.getElementById('cloudModal').classList.add('hidden');
+    };
 
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('logDate').value = today;
@@ -834,84 +830,73 @@ function exportSelectedContent(){
     alert(`🎉 导出成功！文件已保存为「${f}」`);
 }
 
-function openSyncModal(){
-    const savedGistId = localStorage.getItem('gist_id');
-    if(savedGistId){
-        document.getElementById('gistId').value = savedGistId;
-    }
-    document.getElementById('gistIdContainer').classList.remove('hidden');
-    document.getElementById('syncModal').classList.remove('hidden');
+function openCloudModal(){
+    document.getElementById('cloudModal').classList.remove('hidden');
 }
 
-async function uploadToGist(){
-    const token = document.getElementById('githubToken').value.trim();
-    if(!token){alert('请输入GitHub令牌！');return;}
-    const data = {
-        logs: logs,
-        inspirations: inspirations
+// ========== 核心修复：完整云端同步 ==========
+async function backupAllToCloud(){
+    const token = document.getElementById('ghToken').value.trim();
+    if(!token){alert("请输入GitHub Token！");return;}
+
+    const fullData = {
+        dailyLogs: JSON.parse(localStorage.getItem('dailyLogs')) || [],
+        inspirations: JSON.parse(localStorage.getItem('inspirations')) || []
     };
+
     try{
-        const res = await fetch('https://api.github.com/gists',{
-            method:'POST',
+        const res = await fetch("https://api.github.com/gists",{
+            method:"POST",
             headers:{
-                'Authorization':`token ${token}`,
-                'Content-Type':'application/json'
+                "Authorization":`token ${token}`,
+                "Content-Type":"application/json"
             },
             body:JSON.stringify({
-                description:'皇帝之日志 云端数据',
-                public:false,
-                files:{
-                    "diary_data.json":{
-                        content:JSON.stringify(data,null,2)
+                description: SYNC_GIST_DESC,
+                public: false,
+                files: {
+                    [SYNC_GIST_FILENAME]: {
+                        content: JSON.stringify(fullData, null, 2)
                     }
                 }
             })
         });
         if(res.ok){
-            const result = await res.json();
-            const gistId = result.id;
-            localStorage.setItem('gist_id',gistId);
-            document.getElementById('gistId').value = gistId;
-            alert(`✅ 上传成功！你的Gist ID是：${gistId}\n请保存此ID，在新设备上恢复时需要使用。`);
-            document.getElementById('syncModal').classList.add('hidden');
+            alert("✅ 备份成功！所有数据已上传云端");
+            document.getElementById('cloudModal').classList.add('hidden');
         }else{
-            const error = await res.json();
-            alert(`❌ 上传失败：${error.message || '未知错误'}`);
+            alert("❌ 备份失败，请检查Token是否正确");
         }
     }catch(e){
-        alert('❌ 网络错误，请检查网络连接后重试。');
+        alert("❌ 网络错误");
     }
 }
 
-async function downloadFromGist(){
-    const token = document.getElementById('githubToken').value.trim();
-    const gistId = document.getElementById('gistId').value.trim();
-    if(!token || !gistId){alert('请输入GitHub令牌和Gist ID！');return;}
+async function restoreAllFromCloud(){
+    const token = document.getElementById('ghToken').value.trim();
+    if(!token){alert("请输入GitHub Token！");return;}
+
     try{
-        const res = await fetch(`https://api.github.com/gists/${gistId}`,{
-            headers:{
-                'Authorization':`token ${token}`
-            }
+        const listRes = await fetch("https://api.github.com/gists",{
+            headers:{"Authorization":`token ${token}`}
         });
-        if(res.ok){
-            const result = await res.json();
-            const content = result.files['diary_data.json'].content;
-            const data = JSON.parse(content);
-            logs = data.logs || [];
-            inspirations = data.inspirations || [];
-            localStorage.setItem('dailyLogs',JSON.stringify(logs));
-            localStorage.setItem('inspirations',JSON.stringify(inspirations));
-            localStorage.setItem('gist_id',gistId);
-            renderLogs();
-            renderCatalogs();
-            alert('✅ 恢复成功！页面即将刷新以加载最新数据。');
-            location.reload();
-        }else{
-            const error = await res.json();
-            alert(`❌ 恢复失败：${error.message || '未知错误'}`);
-        }
+        if(!listRes.ok){alert("❌ 获取Gist失败");return;}
+        
+        const gists = await listRes.json();
+        const target = gists.find(g=>g.description===SYNC_GIST_DESC);
+        if(!target){alert("❌ 未找到云端备份，请先备份");return;}
+
+        const content = target.files[SYNC_GIST_FILENAME]?.content;
+        if(!content){alert("❌ 数据为空");return;}
+
+        const data = JSON.parse(content);
+        localStorage.setItem('dailyLogs', JSON.stringify(data.dailyLogs || []));
+        localStorage.setItem('inspirations', JSON.stringify(data.inspirations || []));
+        
+        alert("✅ 恢复成功！即将刷新");
+        location.reload();
     }catch(e){
-        alert('❌ 网络错误或数据损坏，请检查令牌和Gist ID是否正确。');
+        alert("❌ 恢复失败："+e.message);
     }
 }
 
