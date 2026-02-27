@@ -150,6 +150,10 @@
             font-size: 14px;
             transition: opacity 0.3s;
         }
+        /* 编辑按钮样式 */
+        .edit-btn {
+            transition: all 0.2s;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -208,11 +212,25 @@
                         </button>
                     </label>
                     <div id="emojiPanel" class="hidden bg-white border border-custom/30 rounded-md p-4 mb-3 flex flex-wrap gap-3 max-h-48 overflow-y-auto">
+                        <!-- 原有 emoji 保留，并新增更多表情和颜文字 -->
                         <span class="emoji-item text-2xl">😊</span><span class="emoji-item text-2xl">😃</span><span class="emoji-item text-2xl">🥰</span><span class="emoji-item text-2xl">😜</span>
                         <span class="emoji-item text-2xl">😎</span><span class="emoji-item text-2xl">🤩</span><span class="emoji-item text-2xl">🥳</span><span class="emoji-item text-2xl">😌</span>
                         <span class="emoji-item text-2xl">😔</span><span class="emoji-item text-2xl">😢</span><span class="emoji-item text-2xl">🔥</span><span class="emoji-item text-2xl">✨</span>
                         <span class="emoji-item text-2xl">🌟</span><span class="emoji-item text-2xl">💖</span><span class="emoji-item text-2xl">🍀</span><span class="emoji-item text-2xl">☕</span>
                         <span class="emoji-item text-2xl">🐉</span><span class="emoji-item text-2xl">🏮</span><span class="emoji-item text-2xl">🍵</span><span class="emoji-item text-2xl">🍶</span>
+                        <!-- 新增 Emoji -->
+                        <span class="emoji-item text-2xl">🥹</span><span class="emoji-item text-2xl">😭</span><span class="emoji-item text-2xl">😤</span><span class="emoji-item text-2xl">🤯</span>
+                        <span class="emoji-item text-2xl">🥴</span><span class="emoji-item text-2xl">😴</span><span class="emoji-item text-2xl">🤗</span><span class="emoji-item text-2xl">🤔</span>
+                        <span class="emoji-item text-2xl">🤫</span><span class="emoji-item text-2xl">🥶</span><span class="emoji-item text-2xl">🥵</span><span class="emoji-item text-2xl">🎉</span>
+                        <!-- 颜文字 -->
+                        <span class="emoji-item text-xl bg-gray-100 px-2 py-1 rounded">(◕‿◕)</span>
+                        <span class="emoji-item text-xl bg-gray-100 px-2 py-1 rounded">(*^▽^*)</span>
+                        <span class="emoji-item text-xl bg-gray-100 px-2 py-1 rounded">¯\_(ツ)_/¯</span>
+                        <span class="emoji-item text-xl bg-gray-100 px-2 py-1 rounded">ʕ•ᴥ•ʔ</span>
+                        <span class="emoji-item text-xl bg-gray-100 px-2 py-1 rounded">(✧∇✧)╯</span>
+                        <span class="emoji-item text-xl bg-gray-100 px-2 py-1 rounded">(╯°□°）╯</span>
+                        <span class="emoji-item text-xl bg-gray-100 px-2 py-1 rounded">[○･｀Д´･○]</span>
+                        <span class="emoji-item text-xl bg-gray-100 px-2 py-1 rounded">(◔_◔)</span>
                     </div>
                     <textarea id="logContent" name="logContent" rows="6" class="w-full px-4 py-3 border border-custom/30 rounded-md focus:outline-none focus:ring-2 focus:ring-custom focus:border-custom text-gray-700" placeholder="写下今日朝政要事、后宫趣事、微服私访见闻……" required></textarea>
                 </div>
@@ -369,7 +387,7 @@
         </div>
     </div>
 
-    <!-- 日志详情模态框 -->
+    <!-- 日志详情模态框（查看模式） -->
     <div id="logModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
         <div class="absolute inset-0 bg-black bg-opacity-50"></div>
         <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8 relative z-10 border border-custom/20 art-border">
@@ -377,6 +395,68 @@
                 <i class="fas fa-times text-xl"></i>
             </button>
             <div id="modalContent" class="space-y-6"></div>
+            <!-- 编辑按钮放在底部 -->
+            <div class="mt-8 flex justify-end gap-4">
+                <button id="editLogBtn" class="px-6 py-2 bg-custom-light text-custom-dark rounded-md hover:bg-custom/20 transition-colors flex items-center gap-2">
+                    <i class="fas fa-edit"></i> 修改此卷
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑日志模态框（新增） -->
+    <div id="editLogModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8 relative z-10 border border-custom/20 art-border">
+            <button id="closeEditModal" class="absolute top-6 right-6 text-gray-500 hover:text-gray-700 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-edit text-custom mr-2"></i>修改御批
+            </h3>
+            <form id="editLogForm" class="space-y-6">
+                <input type="hidden" id="editLogId">
+                <div>
+                    <label for="editLogDate" class="block text-sm font-medium text-gray-700 mb-2">日志日期</label>
+                    <input type="date" id="editLogDate" name="editLogDate" class="w-full px-4 py-3 border border-custom/30 rounded-md focus:outline-none focus:ring-2 focus:ring-custom focus:border-custom" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">今日心情</label>
+                    <div class="flex gap-4 mt-2">
+                        <button type="button" id="editMoodUp" class="edit-mood-btn px-6 py-3 rounded-md flex items-center justify-center gap-2" data-mood="up">
+                            <i class="fas fa-thumbs-up text-xl"></i><span>龙颜大悦</span>
+                        </button>
+                        <button type="button" id="editMoodDown" class="edit-mood-btn px-6 py-3 rounded-md flex items-center justify-center gap-2" data-mood="down">
+                            <i class="fas fa-thumbs-down text-xl"></i><span>略有不悦</span>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label for="editLogContent" class="block text-sm font-medium text-gray-700 mb-2">御笔亲书</label>
+                    <textarea id="editLogContent" name="editLogContent" rows="6" class="w-full px-4 py-3 border border-custom/30 rounded-md focus:outline-none focus:ring-2 focus:ring-custom focus:border-custom text-gray-700" required></textarea>
+                </div>
+                <div>
+                    <label for="editLogImage" class="block text-sm font-medium text-gray-700 mb-2">更换图片 (可选)</label>
+                    <input type="file" id="editLogImage" name="editLogImage" accept="image/*"
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-md file:border-0 file:bg-custom-light file:text-custom-dark hover:file:bg-custom/20">
+                    <div id="editImagePreviewArea" class="mt-4 hidden">
+                        <p class="text-sm text-gray-600 mb-2">新图预览：</p>
+                        <img id="editImagePreview" src="" alt="预览" class="max-h-60 object-cover rounded-md border border-custom/20 shadow-sm">
+                    </div>
+                    <div id="currentImageArea" class="mt-4">
+                        <p class="text-sm text-gray-600 mb-2">当前图片：</p>
+                        <img id="currentImage" src="" alt="当前图片" class="max-h-60 object-cover rounded-md border border-custom/20 shadow-sm">
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-4">
+                    <button type="submit" class="px-8 py-3 bg-custom text-white rounded-md hover:bg-custom-hover transition-colors flex items-center gap-2">
+                        <i class="fas fa-save"></i> 保存修改
+                    </button>
+                    <button type="button" onclick="closeEditModal()" class="px-8 py-3 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors flex items-center gap-2">
+                        取消
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -396,6 +476,7 @@ let selectedMood = 'up';
 let selectedCatalogId = null;
 let selectedSubCatalogId = null;
 let exportType = '';
+let currentEditingLogId = null; // 当前正在编辑的日志ID
 
 // Gist 配置
 let gistConfig = JSON.parse(localStorage.getItem('gistConfig')) || { token: '', gistId: '' };
@@ -559,10 +640,143 @@ function showLogDetails(log) {
         ${log.image ? `<div class="mt-8"><p class="text-sm text-gray-600 mb-3">御赐图片：</p><img src="${log.image}" class="w-full rounded-md border border-custom/20 shadow-sm"></div>` : ''}
         <div class="mt-8 text-sm text-gray-500"><i class="fas fa-info-circle mr-1"></i> 卷宗编号: ${log.id} | 📅 存档时间: ${log.createTime}</div>
     `;
+    // 绑定编辑按钮
+    const editBtn = document.getElementById('editLogBtn');
+    // 移除之前的监听，重新绑定
+    editBtn.replaceWith(editBtn.cloneNode(true));
+    const newEditBtn = document.getElementById('editLogBtn');
+    newEditBtn.addEventListener('click', () => openEditLogModal(log));
     m.classList.remove('hidden');
 }
 
-// ---------- 卷宗（卷） ----------
+// 打开编辑日志模态框，填充当前日志数据
+function openEditLogModal(log) {
+    currentEditingLogId = log.id;
+    document.getElementById('editLogId').value = log.id;
+    document.getElementById('editLogDate').value = log.date;
+    document.getElementById('editLogContent').value = log.content;
+
+    // 设置心情按钮状态
+    const moodUp = document.getElementById('editMoodUp');
+    const moodDown = document.getElementById('editMoodDown');
+    if (log.mood === 'up') {
+        moodUp.classList.add('bg-custom-light', 'text-custom-dark');
+        moodUp.classList.remove('bg-gray-100', 'text-gray-700');
+        moodDown.classList.add('bg-gray-100', 'text-gray-700');
+        moodDown.classList.remove('bg-custom-light', 'text-custom-dark');
+    } else {
+        moodDown.classList.add('bg-custom-light', 'text-custom-dark');
+        moodDown.classList.remove('bg-gray-100', 'text-gray-700');
+        moodUp.classList.add('bg-gray-100', 'text-gray-700');
+        moodUp.classList.remove('bg-custom-light', 'text-custom-dark');
+    }
+
+    // 显示当前图片
+    const currentImg = document.getElementById('currentImage');
+    if (log.image) {
+        currentImg.src = log.image;
+        document.getElementById('currentImageArea').classList.remove('hidden');
+    } else {
+        document.getElementById('currentImageArea').classList.add('hidden');
+        currentImg.src = '';
+    }
+
+    // 清空新图片预览
+    document.getElementById('editImagePreviewArea').classList.add('hidden');
+    document.getElementById('editImagePreview').src = '';
+    document.getElementById('editLogImage').value = '';
+
+    // 关闭详情模态框，打开编辑模态框
+    document.getElementById('logModal').classList.add('hidden');
+    document.getElementById('editLogModal').classList.remove('hidden');
+}
+
+function closeEditModal() {
+    document.getElementById('editLogModal').classList.add('hidden');
+    currentEditingLogId = null;
+}
+
+// 处理编辑日志提交
+document.addEventListener('DOMContentLoaded', function() {
+    const editForm = document.getElementById('editLogForm');
+    editForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = Number(document.getElementById('editLogId').value);
+        const date = document.getElementById('editLogDate').value;
+        const content = document.getElementById('editLogContent').value;
+        const mood = document.querySelector('#editMoodUp.bg-custom-light') ? 'up' : 'down'; // 根据样式判断
+
+        const imageInput = document.getElementById('editLogImage');
+        const file = imageInput.files[0];
+
+        const updateLogInArray = (imgData) => {
+            const index = logs.findIndex(l => l.id === id);
+            if (index !== -1) {
+                logs[index] = { 
+                    ...logs[index], 
+                    date, 
+                    content, 
+                    mood,
+                    image: imgData !== undefined ? imgData : logs[index].image,
+                    updateTime: new Date().toLocaleString() 
+                };
+                persistData();
+                renderLogs();
+                closeEditModal();
+                showToast('日志修改成功');
+            }
+        };
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                updateLogInArray(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            updateLogInArray(undefined); // 保留原图
+        }
+    });
+});
+
+// 编辑心情按钮切换
+function initEditMoodButtons() {
+    const moodUp = document.getElementById('editMoodUp');
+    const moodDown = document.getElementById('editMoodDown');
+    moodUp.addEventListener('click', function() {
+        moodUp.classList.add('bg-custom-light', 'text-custom-dark');
+        moodUp.classList.remove('bg-gray-100', 'text-gray-700');
+        moodDown.classList.add('bg-gray-100', 'text-gray-700');
+        moodDown.classList.remove('bg-custom-light', 'text-custom-dark');
+    });
+    moodDown.addEventListener('click', function() {
+        moodDown.classList.add('bg-custom-light', 'text-custom-dark');
+        moodDown.classList.remove('bg-gray-100', 'text-gray-700');
+        moodUp.classList.add('bg-gray-100', 'text-gray-700');
+        moodUp.classList.remove('bg-custom-light', 'text-custom-dark');
+    });
+}
+
+// 编辑图片预览
+document.addEventListener('DOMContentLoaded', function() {
+    const editImageInput = document.getElementById('editLogImage');
+    const previewArea = document.getElementById('editImagePreviewArea');
+    const previewImg = document.getElementById('editImagePreview');
+    editImageInput.addEventListener('change', function(e) {
+        const f = e.target.files[0];
+        if (f) {
+            previewArea.classList.remove('hidden');
+            const r = new FileReader();
+            r.onload = e => previewImg.src = e.target.result;
+            r.readAsDataURL(f);
+        } else {
+            previewArea.classList.add('hidden');
+            previewImg.src = '';
+        }
+    });
+});
+
+// ---------- 卷宗（卷）函数 (保持不变) ----------
 function addCatalog() {
     const n = document.getElementById('newCatalogName').value.trim();
     if (!n) { alert('🐭 卷名称不能为空哦！'); return; }
@@ -571,7 +785,6 @@ function addCatalog() {
     persistData();
     document.getElementById('newCatalogName').value = '';
     renderCatalogs();
-    // 🆕 自动选中新创建的卷宗，并聚焦章节输入框
     selectCatalog(o.id);
     document.getElementById('newSubCatalogName').focus();
     alert(`📁 卷「${n}」创建成功！`);
@@ -646,7 +859,7 @@ function deleteCatalog(id) {
     }
 }
 
-// ---------- 章节 ----------
+// 章节
 function addSubCatalog() {
     if (!selectedCatalogId) { alert('🐭 请先选择一卷！'); return; }
     const n = document.getElementById('newSubCatalogName').value.trim();
@@ -657,7 +870,6 @@ function addSubCatalog() {
     persistData();
     document.getElementById('newSubCatalogName').value = '';
     renderSubCatalogs();
-    // 🆕 自动选中新创建的章节，并聚焦编辑器
     selectSubCatalog(o.id);
     document.getElementById('inspirationEditor').focus();
     alert(`📂 章节「${n}」创建成功！`);
@@ -732,7 +944,6 @@ function deleteSubCatalog(id) {
     }
 }
 
-// 保存灵感
 function saveInspiration() {
     if (!selectedCatalogId || !selectedSubCatalogId) { alert('🐭 请先选择章节！'); return; }
     const t = document.getElementById('inspirationEditor').value;
@@ -744,7 +955,6 @@ function saveInspiration() {
     alert(`✨ 灵感「${s.name}」保存成功！`);
 }
 
-// 加一页（换行分页）
 function addPage() {
     const e = document.getElementById('inspirationEditor');
     e.value += '\n\n—————— 第 ' + ((e.value.split('——————').length)) + ' 页 ——————\n\n';
@@ -752,16 +962,17 @@ function addPage() {
     e.selectionStart = e.selectionEnd = e.value.length;
 }
 
-// 导出相关 (保持原样，仅作示意，实际已在原代码中存在)
+// 导出相关 (保持原样)
 function openExportModal(t) {
     exportType = t;
     const m = document.getElementById('exportModal');
     const c = document.getElementById('exportContent');
-    c.innerHTML = ''; // 实际实现需完整，此处略（已在原代码中存在）
+    c.innerHTML = ''; // 实际实现已在原代码中存在，此处略
     m.classList.remove('hidden');
 }
 function toggleExportItems(t) {}
 function exportSelectedContent() {}
+
 function formatDate(s) {
     return new Date(s).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
 }
@@ -881,6 +1092,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('closeExportModal').addEventListener('click', () => {
         document.getElementById('exportModal').classList.add('hidden');
     });
+    document.getElementById('closeEditModal').addEventListener('click', closeEditModal);
 
     // Gist 配置相关
     const gistModal = document.getElementById('gistModal');
@@ -926,11 +1138,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // 初始化编辑心情按钮
+    initEditMoodButtons();
+
     // 初始化渲染
     renderLogs();
     renderCatalogs();
 
-    // 如果已有gist配置，尝试从gist加载（静默自动加载）
+    // 如果已有gist配置，尝试从gist加载
     if (gistConfig.token && gistConfig.gistId) {
         fetchFromGist().catch(err => console.warn('自动从Gist加载失败', err));
     }
