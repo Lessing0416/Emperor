@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐀皇帝之日志</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f0f8f0;
+            background-image: 
+                linear-gradient(rgba(155,187,89,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(155,187,89,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .art-border {
+            position: relative;
+        }
+        .art-border::before, .art-border::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgb(155,187,89);
+        }
+        .art-border::before {
+            top: 10px;
+            left: 10px;
+            border-right: none;
+            border-bottom: none;
+        }
+        .art-border::after {
+            bottom: 10px;
+            right: 10px;
+            border-left: none;
+            border-top: none;
+        }
+        .log-card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(155,187,89,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .log-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, rgb(155,187,89), rgba(155,187,89,0.3));
+        }
+        .log-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 28px -8px rgba(155, 187, 89, 0.2);
+        }
+        .bg-custom {
+            background-color: rgb(155,187,89);
+        }
+        .text-custom {
+            color: rgb(155,187,89);
+        }
+        .border-custom {
+            border-color: rgb(155,187,89);
+        }
+        .bg-custom-light {
+            background-color: rgba(155,187,89,0.1);
+        }
+        .text-custom-dark {
+            color: rgba(110, 130, 60, 0.9);
+        }
+        .hover\:bg-custom-hover:hover {
+            background-color: rgba(155,187,89,0.8);
+        }
+        .seal {
+            display: inline-block;
+            padding: 2px 8px;
+            border: 1px solid rgb(155,187,89);
+            border-radius: 4px;
+            font-size: 12px;
+            color: rgb(155,187,89);
+            margin-left: 8px;
+            transform: rotate(-3deg);
+        }
+
+        /* ====================== 核心：超大信纸 + 铺满输入框 ====================== */
+        .letter-paper-container {
+            background-color: #fffdf8;
+            background-image: 
+                linear-gradient(90deg, transparent 24px, #f0e6d2 24px, #f0e6d2 26px, transparent 26px),
+                linear-gradient(#e8e0d0 1px, transparent 1px);
+            background-size: 100% 32px;
+            padding: 40px 50px;
+            border: 1px solid #e0d8c8;
+            box-shadow: 0 2px 15px rgba(155,187,89,0.1);
+            width: 100%;
+            min-height: 900px; /* 整页变大 */
+            position: relative;
+        }
+        .letter-paper-container textarea {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            padding: 40px 50px;
+            font-family: "楷体", "SimKai", serif;
+            font-size: 18px;
+            line-height: 32px;
+            letter-spacing: 1px;
+            color: #222;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+
+        /* 目录样式 */
+        .catalog-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .catalog-item:hover {
+            background-color: rgba(155,187,89,0.05);
+        }
+        .subcatalog-item {
+            border-left: 2px solid rgb(155,187,89);
+            margin-left: 15px;
+            padding-left: 15px;
+            cursor: pointer;
+        }
+        .modal-backdrop {
+            backdrop-filter: blur(6px);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<header class="bg-custom text-white py-6 px-4 shadow-lg">
+    <div class="container mx-auto">
+        <h1 class="text-2xl md:text-3xl font-bold flex items-center">
+            🐀皇帝之日志<span class="seal">御批</span>
+        </h1>
+        <p class="mt-2 text-white/80">🙇‍♂️皇上今天辛苦了🙇‍♂️</p>
+    </div>
+</header>
+
+<main class="container mx-auto px-4 py-8">
+
+    <!-- 标签 -->
+    <div class="flex flex-wrap gap-2 mb-8">
+        <button id="tabDailyLog" class="px-6 py-3 bg-custom text-white rounded-md hover:bg-custom-hover transition-colors font-medium">
+            📜 今日鼠闻
+        </button>
+        <button id="tabInspiration" class="px-6 py-3 bg-white text-custom border border-custom rounded-md hover:bg-custom-light transition-colors font-medium">
+            🐭 奇鼠妙想
+        </button>
+    </div>
+
+    <!-- 今日鼠闻 -->
+    <section id="dailyLogSection">
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8 border border-custom/20 art-border">
+            <h2 class="text-xl font-semibold mb-6 text-gray-800 flex items-center">
+                <i class="fas fa-plus-circle text-custom mr-2"></i>✍史官记载……
+            </h2>
+            <form id="logForm" class="space-y-6">
+                <div>
+                    <label for="logDate" class="block text-sm font-medium text-gray-700 mb-2">日志日期</label>
+                    <input type="date" id="logDate" name="logDate" class="w-full px-4 py-3 border border-custom/30 rounded-md focus:outline-none focus:ring-2 focus:ring-custom focus:border-custom" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">今日心情</label>
+                    <div class="flex gap-4 mt-2">
+                        <button type="button" id="moodUp" class="mood-btn active bg-custom-light text-custom-dark px-6 py-3 rounded-md flex items-center justify-center gap-2" data-mood="up">
+                            <i class="fas fa-thumbs-up text-xl"></i><span>龙颜大悦</span>
+                        </button>
+                        <button type="button" id="moodDown" class="mood-btn bg-gray-100 text-gray-700 px-6 py-3 rounded-md flex items-center justify-center gap-2" data-mood="down">
+                            <i class="fas fa-thumbs-down text-xl"></i><span>略有不悦</span>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label for="logContent" class="block text-sm font-medium text-gray-700 mb-2">
+                        御笔亲书 
+                        <button type="button" id="openEmojiPanel" class="text-custom hover:text-custom-dark ml-2">
+                            <i class="fas fa-smile"></i> 御用品味
+                        </button>
+                    </label>
+                    <div id="emojiPanel" class="hidden bg-white border border-custom/30 rounded-md p-4 mb-3 flex flex-wrap gap-3 max-h-48 overflow-y-auto">
+                        <span class="emoji-item text-2xl">😊</span><span class="emoji-item text-2xl">😃</span><span class="emoji-item text-2xl">🥰</span><span class="emoji-item text-2xl">😜</span>
+                        <span class="emoji-item text-2xl">😎</span><span class="emoji-item text-2xl">🤩</span><span class="emoji-item text-2xl">🥳</span><span class="emoji-item text-2xl">😌</span>
+                        <span class="emoji-item text-2xl">😔</span><span class="emoji-item text-2xl">😢</span><span class="emoji-item text-2xl">🔥</span><span class="emoji-item text-2xl">✨</span>
+                        <span class="emoji-item text-2xl">🌟</span><span class="emoji-item text-2xl">💖</span><span class="emoji-item text-2xl">🍀</span><span class="emoji-item text-2xl">☕</span>
+                        <span class="emoji-item text-2xl">🐉</span><span class="emoji-item text-2xl">🏮</span><span class="emoji-item text-2xl">🍵</span><span class="emoji-item text-2xl">🍶</span>
+                    </div>
+                    <textarea id="logContent" name="logContent" rows="6" class="w-full px-4 py-3 border border-custom/30 rounded-md focus:outline-none focus:ring-2 focus:ring-custom focus:border-custom text-gray-700" placeholder="写下今日朝政要事、后宫趣事、微服私访见闻……" required></textarea>
+                </div>
+                <div>
+                    <label for="logImage" class="block text-sm font-medium text-gray-700 mb-2">御赐图片</label>
+                    <input type="file" id="logImage" name="logImage" accept="image/*"
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-md file:border-0 file:bg-custom-light file:text-custom-dark hover:file:bg-custom/20">
+                    <div id="imagePreviewArea" class="mt-4 hidden">
+                        <p class="text-sm text-gray-600 mb-2">御览预览：</p>
+                        <img id="imagePreview" src="" alt="预览" class="max-h-60 object-cover rounded-md border border-custom/20 shadow-sm">
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-4">
+                    <button type="submit" class="px-8 py-3 bg-custom text-white rounded-md hover:bg-custom-hover transition-colors flex items-center gap-2">
+                        <i class="fas fa-save"></i>存档入册
+                    </button>
+                    <button type="button" onclick="openExportModal('daily')" class="px-8 py-3 bg-custom-light text-custom-dark rounded-md hover:bg-custom/20 transition-colors flex items-center gap-2">
+                        <i class="fas fa-download"></i>导出御记
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-semibold mb-6 text-gray-800 flex items-center">
+                <i class="fas fa-list-alt text-custom mr-2"></i>皇家史册
+            </h2>
+            <div id="logList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="text-center text-gray-500 py-12" id="emptyState">
+                    <i class="fas fa-file-alt text-5xl mb-4 text-custom"></i>
+                    <p class="text-lg">暂无御笔记录，皇上请开始您的创作！</p>
+                </div>
+            </div>
+        </section>
+    </section>
+
+    <!-- 奇鼠妙想 -->
+    <section id="inspirationSection" class="hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-custom/20 art-border h-fit">
+                <h2 class="text-xl font-semibold mb-6 text-gray-800 flex items-center">
+                    <i class="fas fa-folder-open text-custom mr-2"></i>卷宗
+                </h2>
+                <div class="flex gap-2 mb-8">
+                    <input type="text" id="newCatalogName" placeholder="新增卷名称" 
+                           class="flex-1 px-4 py-3 border border-custom/30 rounded-md focus:outline-none focus:ring-2 focus:ring-custom focus:border-custom">
+                    <button onclick="addCatalog()" class="px-4 py-3 bg-custom text-white rounded-md hover:bg-custom-hover transition-colors">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div id="catalogList" class="space-y-4 max-h-[700px] overflow-y-auto pr-2">
+                    <div class="text-center text-gray-500 py-6" id="emptyCatalog">
+                        <i class="fas fa-folder text-3xl mb-3 text-custom"></i>
+                        <p>暂无卷宗，新增一卷吧！</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3">
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6 border border-custom/20 art-border">
+                    <h2 class="text-xl font-semibold mb-6 text-gray-800 flex items-center" id="subCatalogTitle">
+                        <i class="fas fa-folder-plus text-custom mr-2"></i>请先选择一卷
+                    </h2>
+                    <div id="subCatalogForm" class="hidden flex gap-2 mb-8">
+                        <input type="text" id="newSubCatalogName" placeholder="新增章节名称" 
+                               class="flex-1 px-4 py-3 border border-custom/30 rounded-md focus:outline-none focus:ring-2 focus:ring-custom focus:border-custom">
+                        <button onclick="addSubCatalog()" class="px-4 py-3 bg-custom text-white rounded-md hover:bg-custom-hover transition-colors">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div id="subCatalogList" class="space-y-3 max-h-[250px] overflow-y-auto pr-2"></div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6 border border-custom/20 art-border">
+                    <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center" id="editorTitle">
+                            <i class="fas fa-pen-fancy text-custom mr-2"></i>未选择章节
+                        </h2>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="addPageBtn" class="hidden px-4 py-2 bg-custom-light text-custom-dark rounded-md hover:bg-custom/20" onclick="addPage()">
+                                <i class="fas fa-file"></i> 加一页
+                            </button>
+                            <button id="saveInspirationBtn" onclick="saveInspiration()" class="hidden px-6 py-3 bg-custom text-white rounded-md hover:bg-custom-hover transition-colors flex items-center gap-2">
+                                <i class="fas fa-save"></i> 保存灵感
+                            </button>
+                            <button onclick="openExportModal('inspiration')" class="px-6 py-3 bg-custom-light text-custom-dark rounded-md hover:bg-custom/20 transition-colors flex items-center gap-2">
+                                <i class="fas fa-download"></i> 导出灵感
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ====================== 整页信纸 + 铺满输入框 ====================== -->
+                    <div class="letter-paper-container">
+                        <textarea id="inspirationEditor" placeholder="✨ 奇鼠妙想，下笔有神～"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 导出模态框 -->
+    <div id="exportModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto p-8 relative z-10 border border-custom/20 art-border">
+            <button id="closeExportModal" class="absolute top-6 right-6 text-gray-500 hover:text-gray-700 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-download text-custom mr-2"></i>导出内容
+            </h3>
+            <div id="exportContent" class="space-y-6"></div>
+            <div class="mt-8 flex justify-end">
+                <button onclick="exportSelectedContent()" class="px-8 py-3 bg-custom text-white rounded-md hover:bg-custom-hover transition-colors flex items-center gap-2 text-lg">
+                    <i class="fas fa-file-export"></i> 导出选中内容
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 日志详情 -->
+    <div id="logModal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8 relative z-10 border border-custom/20 art-border">
+            <button id="closeModal" class="absolute top-6 right-6 text-gray-500 hover:text-gray-700 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <div id="modalContent" class="space-y-6"></div>
+        </div>
+    </div>
+
+</main>
+
+<footer class="bg-custom text-white py-6 px-4 mt-16">
+    <div class="container mx-auto text-center text-sm">
+        <p>🐀皇帝之日志 &copy; 2026 | 📜有事启奏，无事退朝📜</p>
+    </div>
+</footer>
+
+<script>
+let logs = JSON.parse(localStorage.getItem('dailyLogs')) || [];
+let inspirations = JSON.parse(localStorage.getItem('inspirations')) || [];
+let selectedMood = 'up';
+let selectedCatalogId = null;
+let selectedSubCatalogId = null;
+let exportType = '';
+
+document.addEventListener('DOMContentLoaded', function(){
+    const tabDailyLog = document.getElementById('tabDailyLog');
+    const tabInspiration = document.getElementById('tabInspiration');
+    const dailyLogSection = document.getElementById('dailyLogSection');
+    const inspirationSection = document.getElementById('inspirationSection');
+
+    tabDailyLog.addEventListener('click', function(){
+        dailyLogSection.classList.remove('hidden');
+        inspirationSection.classList.add('hidden');
+        tabDailyLog.classList.add('bg-custom','text-white');
+        tabDailyLog.classList.remove('bg-white','text-custom','border-custom');
+        tabInspiration.classList.remove('bg-custom','text-white');
+        tabInspiration.classList.add('bg-white','text-custom','border-custom');
+    });
+    tabInspiration.addEventListener('click', function(){
+        inspirationSection.classList.remove('hidden');
+        dailyLogSection.classList.add('hidden');
+        tabInspiration.classList.add('bg-custom','text-white');
+        tabInspiration.classList.remove('bg-white','text-custom','border-custom');
+        tabDailyLog.classList.remove('bg-custom','text-white');
+        tabDailyLog.classList.add('bg-white','text-custom','border-custom');
+        renderCatalogs();
+    });
+
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('logDate').value = today;
+
+    // 心情
+    const moodUp = document.getElementById('moodUp');
+    const moodDown = document.getElementById('moodDown');
+    moodUp.addEventListener('click',function(){
+        selectedMood='up';
+        moodUp.classList.add('active','bg-custom-light','text-custom-dark');
+        moodUp.classList.remove('bg-gray-100','text-gray-700');
+        moodDown.classList.remove('active','bg-custom-light','text-custom-dark');
+        moodDown.classList.add('bg-gray-100','text-gray-700');
+    });
+    moodDown.addEventListener('click',function(){
+        selectedMood='down';
+        moodDown.classList.add('active','bg-custom-light','text-custom-dark');
+        moodDown.classList.remove('bg-gray-100','text-gray-700');
+        moodUp.classList.remove('active','bg-custom-light','text-custom-dark');
+        moodUp.classList.add('bg-gray-100','text-gray-700');
+    });
+
+    // emoji
+    const openEmojiPanel = document.getElementById('openEmojiPanel');
+    const emojiPanel = document.getElementById('emojiPanel');
+    const logContent = document.getElementById('logContent');
+    openEmojiPanel.addEventListener('click',function(e){
+        e.stopPropagation();
+        emojiPanel.classList.toggle('hidden');
+        document.addEventListener('click',function(e){
+            if(!emojiPanel.contains(e.target) && e.target!==openEmojiPanel){
+                emojiPanel.classList.add('hidden');
+            }
+        },{once:true});
+    });
+    document.querySelectorAll('.emoji-item').forEach(item=>{
+        item.addEventListener('click',function(){
+            const cur = logContent.selectionStart;
+            const t = logContent.value;
+            logContent.value = t.substring(0,cur)+this.textContent+t.substring(cur);
+            logContent.focus();
+            logContent.selectionStart = logContent.selectionEnd = cur+this.textContent.length;
+        });
+    });
+
+    // 图片预览
+    const imageInput = document.getElementById('logImage');
+    const previewArea = document.getElementById('imagePreviewArea');
+    const previewImage = document.getElementById('imagePreview');
+    imageInput.addEventListener('change',function(e){
+        const f = e.target.files[0];
+        if(f){
+            previewArea.classList.remove('hidden');
+            const r = new FileReader();
+            r.onload=e=>previewImage.src=e.target.result;
+            r.readAsDataURL(f);
+        }else{
+            previewArea.classList.add('hidden');
+            previewImage.src='';
+        }
+    });
+
+    // 保存日志
+    const logForm = document.getElementById('logForm');
+    logForm.addEventListener('submit',function(e){
+        e.preventDefault();
+        const d = document.getElementById('logDate').value;
+        const c = document.getElementById('logContent').value;
+        const f = document.getElementById('logImage').files[0];
+        if(f){
+            const r = new FileReader();
+            r.onload=e=>{
+                saveLog(d,c,e.target.result,selectedMood);
+            };
+            r.readAsDataURL(f);
+        }else{
+            saveLog(d,c,null,selectedMood);
+        }
+        logForm.reset();
+        previewArea.classList.add('hidden');
+        previewImage.src='';
+        emojiPanel.classList.add('hidden');
+        document.getElementById('logDate').value=today;
+        moodUp.click();
+        const tips=["📜 圣旨已存档！","🏮 御笔记录已入册！","🐉 皇上英明，记录完毕！","🎎 史官已如实记载！"];
+        alert(tips[Math.floor(Math.random()*tips.length)]);
+    });
+
+    // 模态框关闭
+    document.getElementById('closeModal').addEventListener('click',()=>{
+        document.getElementById('logModal').classList.add('hidden');
+    });
+    document.getElementById('closeExportModal').addEventListener('click',()=>{
+        document.getElementById('exportModal').classList.add('hidden');
+    });
+
+    renderLogs();
+    renderCatalogs();
+});
+
+// 日志
+function saveLog(date,content,img,mood){
+    const o = {id:Date.now(),date,content,image:img,mood,createTime:new Date().toLocaleString()};
+    logs.unshift(o);
+    localStorage.setItem('dailyLogs',JSON.stringify(logs));
+    renderLogs();
+}
+function renderLogs(){
+    const l = document.getElementById('logList');
+    const e = document.getElementById('emptyState');
+    l.innerHTML='';
+    if(logs.length===0){
+        l.appendChild(e);
+        return;
+    }
+    logs.forEach(log=>{
+        const d = document.createElement('div');
+        d.className='log-card bg-white rounded-lg shadow p-6 cursor-pointer';
+        d.innerHTML=`
+            <div class="flex justify-between items-start mb-4">
+                <span class="text-sm font-medium text-custom bg-custom-light px-3 py-1 rounded">
+                    <i class="fas fa-calendar mr-1"></i>${formatDate(log.date)}
+                </span>
+                <span class="text-xl ${log.mood==='up'?'text-custom':'text-gray-500'}">
+                    <i class="fas fa-thumbs-${log.mood}"></i> ${log.mood==='up'?'龙颜大悦':'略有不悦'}
+                </span>
+            </div>
+            <div class="text-gray-700 mb-6 line-clamp-4 text-lg">${log.content}</div>
+            ${log.image?`<div class="mt-2 mb-4"><img src="${log.image}" class="w-full h-48 object-cover rounded-md border border-custom/20"></div>`:''}
+            <div class="flex justify-between items-center mt-4">
+                <span class="text-xs text-gray-500">点击查看御批详情</span>
+                <button class="delete-btn text-red-500 hover:text-red-700" data-id="${log.id}"><i class="fas fa-trash-alt"></i> 销毁此卷</button>
+            </div>
+        `;
+        d.addEventListener('click',function(ev){
+            if(!ev.target.closest('.delete-btn')) showLogDetails(log);
+        });
+        d.querySelector('.delete-btn').addEventListener('click',function(ev){
+            ev.stopPropagation();
+            if(confirm('📜 确定要销毁此卷史册？销毁后无法复原！')){
+                logs=logs.filter(x=>x.id!==Number(this.dataset.id));
+                localStorage.setItem('dailyLogs',JSON.stringify(logs));
+                renderLogs();
+            }
+        });
+        l.appendChild(d);
+    });
+}
+function showLogDetails(log){
+    const m = document.getElementById('logModal');
+    const c = document.getElementById('modalContent');
+    c.innerHTML=`
+        <h3 class="text-2xl font-bold text-gray-800 mb-4">📜 ${formatDate(log.date)} 御批
+            <span class="ml-3 text-2xl ${log.mood==='up'?'text-custom':'text-gray-500'}">
+                <i class="fas fa-thumbs-${log.mood}"></i> ${log.mood==='up'?'龙颜大悦':'略有不悦'}
+            </span>
+        </h3>
+        <div class="border-b border-custom/20 pb-4 mb-6"></div>
+        <div class="text-gray-700 whitespace-pre-line text-xl leading-relaxed">${log.content}</div>
+        ${log.image?`<div class="mt-8"><p class="text-sm text-gray-600 mb-3">御赐图片：</p><img src="${log.image}" class="w-full rounded-md border border-custom/20 shadow-sm"></div>`:''}
+        <div class="mt-8 text-sm text-gray-500"><i class="fas fa-info-circle mr-1"></i> 卷宗编号: ${log.id} | 📅 存档时间: ${log.createTime}</div>
+    `;
+    m.classList.remove('hidden');
+}
+
+// 卷宗（卷）
+function addCatalog(){
+    const n = document.getElementById('newCatalogName').value.trim();
+    if(!n){alert('🐭 卷名称不能为空哦！');return;}
+    const o = {id:Date.now(),name:n,createTime:new Date().toLocaleString(),subCatalogs:[]};
+    inspirations.push(o);
+    localStorage.setItem('inspirations',JSON.stringify(inspirations));
+    document.getElementById('newCatalogName').value='';
+    renderCatalogs();
+    alert(`📁 卷「${n}」创建成功！`);
+}
+function renderCatalogs(){
+    const l = document.getElementById('catalogList');
+    const e = document.getElementById('emptyCatalog');
+    l.innerHTML='';
+    if(inspirations.length===0){
+        l.appendChild(e);
+        return;
+    }
+    inspirations.forEach(c=>{
+        const d = document.createElement('div');
+        d.className=`catalog-item p-4 rounded-md border border-gray-100 flex justify-between items-center ${selectedCatalogId===c.id?'bg-custom-light border-custom':''}`;
+        d.innerHTML=`
+            <div class="flex items-center flex-1">
+                <i class="fas fa-folder text-custom mr-3 text-lg"></i>
+                <span class="catalog-name text-lg" data-id="${c.id}">${c.name}</span>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="editCatalog(${c.id})" class="text-custom hover:text-custom-dark"><i class="fas fa-edit text-lg"></i></button>
+                <button onclick="deleteCatalog(${c.id})" class="text-red-500 hover:text-red-700"><i class="fas fa-trash text-lg"></i></button>
+            </div>
+        `;
+        d.querySelector('.catalog-name').addEventListener('click',()=>selectCatalog(c.id));
+        l.appendChild(d);
+    });
+}
+function selectCatalog(id){
+    selectedCatalogId=id;
+    selectedSubCatalogId=null;
+    const c = inspirations.find(x=>x.id===id);
+    document.getElementById('subCatalogTitle').innerHTML=`<i class="fas fa-folder-plus text-custom mr-2"></i>「${c.name}」的章节`;
+    document.getElementById('subCatalogForm').classList.remove('hidden');
+    document.getElementById('inspirationEditor').value='';
+    document.getElementById('editorTitle').innerHTML=`<i class="fas fa-pen-fancy text-custom mr-2"></i>未选择章节`;
+    document.getElementById('saveInspirationBtn').classList.add('hidden');
+    document.getElementById('addPageBtn').classList.add('hidden');
+    renderSubCatalogs();
+    renderCatalogs();
+}
+function editCatalog(id){
+    const c=inspirations.find(x=>x.id===id);
+    const n=prompt('🐭 修改卷名称：',c.name);
+    if(n&&n.trim()){
+        c.name=n.trim();
+        localStorage.setItem('inspirations',JSON.stringify(inspirations));
+        renderCatalogs();
+        if(selectedCatalogId===id){
+            document.getElementById('subCatalogTitle').innerHTML=`<i class="fas fa-folder-plus text-custom mr-2"></i>「${c.name}」的章节`;
+        }
+    }
+}
+function deleteCatalog(id){
+    const c=inspirations.find(x=>x.id===id);
+    if(confirm(`🗑 确定要删除卷「${c.name}」吗？会删除所有章节和内容！`)){
+        inspirations=inspirations.filter(x=>x.id!==id);
+        localStorage.setItem('inspirations',JSON.stringify(inspirations));
+        selectedCatalogId=null;
+        selectedSubCatalogId=null;
+        document.getElementById('subCatalogForm').classList.add('hidden');
+        document.getElementById('subCatalogTitle').innerHTML=`<i class="fas fa-folder-plus text-custom mr-2"></i>请先选择一卷`;
+        document.getElementById('subCatalogList').innerHTML='';
+        renderCatalogs();
+    }
+}
+
+// 章节
+function addSubCatalog(){
+    if(!selectedCatalogId){alert('🐭 请先选择一卷！');return;}
+    const n=document.getElementById('newSubCatalogName').value.trim();
+    if(!n){alert('🐭 章节名称不能为空哦！');return;}
+    const c=inspirations.find(x=>x.id===selectedCatalogId);
+    const o={id:Date.now(),name:n,createTime:new Date().toLocaleString(),updateTime:new Date().toLocaleString(),content:''};
+    c.subCatalogs.push(o);
+    localStorage.setItem('inspirations',JSON.stringify(inspirations));
+    document.getElementById('newSubCatalogName').value='';
+    renderSubCatalogs();
+    alert(`📂 章节「${n}」创建成功！`);
+}
+function renderSubCatalogs(){
+    if(!selectedCatalogId)return;
+    const l=document.getElementById('subCatalogList');
+    const c=inspirations.find(x=>x.id===selectedCatalogId);
+    l.innerHTML='';
+    if(c.subCatalogs.length===0){
+        l.innerHTML=`<div class="text-center text-gray-500 py-4"><i class="fas fa-folder-open text-xl mb-2 text-custom"></i><p class="text-base">暂无章节，新增一章吧！</p></div>`;
+        return;
+    }
+    c.subCatalogs.forEach(s=>{
+        const d=document.createElement('div');
+        d.className=`subcatalog-item p-3 rounded-md border border-gray-100 flex justify-between items-center ${selectedSubCatalogId===s.id?'bg-custom-light border-custom':''}`;
+        d.innerHTML=`
+            <div class="flex items-center flex-1">
+                <i class="fas fa-file-alt text-custom mr-3"></i>
+                <span class="subcatalog-name text-base" data-id="${s.id}">${s.name}</span>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="editSubCatalog(${s.id})" class="text-custom hover:text-custom-dark"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteSubCatalog(${s.id})" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+        d.querySelector('.subcatalog-name').addEventListener('click',()=>selectSubCatalog(s.id));
+        l.appendChild(d);
+    });
+}
+function selectSubCatalog(id){
+    selectedSubCatalogId=id;
+    const c=inspirations.find(x=>x.id===selectedCatalogId);
+    const s=c.subCatalogs.find(x=>x.id===id);
+    document.getElementById('editorTitle').innerHTML=`<i class="fas fa-pen-fancy text-custom mr-2"></i>「${c.name}」-「${s.name}」`;
+    document.getElementById('inspirationEditor').value=s.content||'';
+    document.getElementById('saveInspirationBtn').classList.remove('hidden');
+    document.getElementById('addPageBtn').classList.remove('hidden');
+    renderSubCatalogs();
+}
+function editSubCatalog(id){
+    const c=inspirations.find(x=>x.id===selectedCatalogId);
+    const s=c.subCatalogs.find(x=>x.id===id);
+    const n=prompt('🐭 修改章节名称：',s.name);
+    if(n&&n.trim()){
+        s.name=n.trim();
+        localStorage.setItem('inspirations',JSON.stringify(inspirations));
+        renderSubCatalogs();
+        if(selectedSubCatalogId===id){
+            document.getElementById('editorTitle').innerHTML=`<i class="fas fa-pen-fancy text-custom mr-2"></i>「${c.name}」-「${s.name}」`;
+        }
+    }
+}
+function deleteSubCatalog(id){
+    const c=inspirations.find(x=>x.id===selectedCatalogId);
+    const s=c.subCatalogs.find(x=>x.id===id);
+    if(confirm(`🗑 确定要删除章节「${s.name}」吗？会删除其中的所有内容！`)){
+        c.subCatalogs=c.subCatalogs.filter(x=>x.id!==id);
+        localStorage.setItem('inspirations',JSON.stringify(inspirations));
+        selectedSubCatalogId=null;
+        document.getElementById('inspirationEditor').value='';
+        document.getElementById('editorTitle').innerHTML=`<i class="fas fa-pen-fancy text-custom mr-2"></i>未选择章节`;
+        document.getElementById('saveInspirationBtn').classList.add('hidden');
+        document.getElementById('addPageBtn').classList.add('hidden');
+        renderSubCatalogs();
+    }
+}
+
+// 保存灵感
+function saveInspiration(){
+    if(!selectedCatalogId||!selectedSubCatalogId){alert('🐭 请先选择章节！');return;}
+    const t=document.getElementById('inspirationEditor').value;
+    const c=inspirations.find(x=>x.id===selectedCatalogId);
+    const s=c.subCatalogs.find(x=>x.id===selectedSubCatalogId);
+    s.content=t;
+    s.updateTime=new Date().toLocaleString();
+    localStorage.setItem('inspirations',JSON.stringify(inspirations));
+    alert(`✨ 灵感「${s.name}」保存成功！`);
+}
+
+// 加一页（换行分页）
+function addPage(){
+    const e=document.getElementById('inspirationEditor');
+    e.value+='\n\n—————— 第 '+((e.value.split('——————').length))+' 页 ——————\n\n';
+    e.focus();
+    e.selectionStart=e.selectionEnd=e.value.length;
+}
+
+// 导出
+function openExportModal(t){
+    exportType=t;
+    const m=document.getElementById('exportModal');
+    const c=document.getElementById('exportContent');
+    c.innerHTML='';
+    if(t==='daily'){
+        c.innerHTML=`
+            <div class="mb-6">
+                <h4 class="font-medium text-lg mb-3">📜 今日鼠闻导出</h4>
+                <div class="flex items-center mb-3">
+                    <input type="checkbox" id="exportAllDaily" checked class="mr-3 text-custom w-5 h-5">
+                    <label for="exportAllDaily" class="text-base">导出全部鼠闻</label>
+                </div>
+                <div id="dailyLogItems" class="ml-6 mt-3 space-y-3 border-l-2 border-custom/20 pl-4 hidden">
+                    ${logs.map(g=>`<div class="flex items-center"><input type="checkbox" id="log_${g.id}" class="mr-3 text-custom w-5 h-5 export-item" data-type="log" data-id="${g.id}"><label for="log_${g.id}" class="text-base">${formatDate(g.date)} - ${g.content.substring(0,25)}${g.length>25?'...':''}</label></div>`).join('')}
+                    ${logs.length===0?'<div class="text-gray-500">暂无鼠闻可选择</div>':''}
+                </div>
+                <button onclick="toggleExportItems('daily')" class="text-custom text-sm mt-2 flex items-center"><i class="fas fa-chevron-down mr-1"></i> 展开选择单条鼠闻</button>
+            </div>
+        `;
+    }else{
+        c.innerHTML=`
+            <div class="mb-6">
+                <h4 class="font-medium text-lg mb-3">🐭 奇鼠妙想导出</h4>
+                <div class="flex items-center mb-3">
+                    <input type="checkbox" id="exportAllInspiration" checked class="mr-3 text-custom w-5 h-5">
+                    <label for="exportAllInspiration" class="text-base">导出全部卷宗</label>
+                </div>
+                <div id="inspirationItems" class="ml-6 mt-3 space-y-5 border-l-2 border-custom/20 pl-4 hidden">
+                    ${inspirations.map(ca=>`
+                        <div>
+                            <div class="flex items-center mb-3">
+                                <input type="checkbox" id="catalog_${ca.id}" class="mr-3 text-custom w-5 h-5 export-item" data-type="catalog" data-id="${ca.id}">
+                                <label for="catalog_${ca.id}" class="text-base font-medium">📁 ${ca.name}</label>
+                            </div>
+                            <div class="ml-6 mt-2 space-y-3">
+                                ${ca.subCatalogs.map(s=>`<div class="flex items-center"><input type="checkbox" id="subcatalog_${s.id}" class="mr-3 text-custom w-5 h-5 export-item" data-type="subcatalog" data-id="${s.id}" data-catalog="${ca.id}"><label for="subcatalog_${s.id}" class="text-base">📝 ${s.name}</label></div>`).join('')}
+                                ${ca.subCatalogs.length===0?'<div class="text-gray-500 text-sm">暂无章节</div>':''}
+                            </div>
+                        </div>
+                    `).join('')}
+                    ${inspirations.length===0?'<div class="text-gray-500">暂无卷宗可选择</div>':''}
+                </div>
+                <button onclick="toggleExportItems('inspiration')" class="text-custom text-sm mt-2 flex items-center"><i class="fas fa-chevron-down mr-1"></i> 展开选择卷/章节</button>
+            </div>
+        `;
+    }
+    m.classList.remove('hidden');
+}
+function toggleExportItems(t){
+    const e=document.getElementById(t==='daily'?'dailyLogItems':'inspirationItems');
+    const b=event.target.closest('button');
+    const i=b.querySelector('i');
+    if(e.classList.contains('hidden')){
+        e.classList.remove('hidden');
+        i.classList.remove('fa-chevron-down');i.classList.add('fa-chevron-up');
+        b.innerHTML=`<i class="fas fa-chevron-up mr-1"></i> 收起选择项`;
+    }else{
+        e.classList.add('hidden');
+        i.classList.remove('fa-chevron-up');i.classList.add('fa-chevron-down');
+        b.innerHTML=`<i class="fas fa-chevron-down mr-1"></i> 展开选择${t==='daily'?'单条鼠闻':'卷/章节'}`;
+    }
+}
+function exportSelectedContent(){
+    let d,f;
+    if(exportType==='daily'){
+        const a=document.getElementById('exportAllDaily').checked;
+        f=`今日鼠闻_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
+        if(a){
+            d={type:'daily_logs',title:'今日鼠闻',time:new Date().toLocaleString(),data:logs};
+        }else{
+            const ids=[...document.querySelectorAll('.export-item:checked')].filter(i=>i.dataset.type==='log').map(i=>Number(i.dataset.id));
+            d={type:'daily_logs',title:'今日鼠闻（精选）',time:new Date().toLocaleString(),data:logs.filter(g=>ids.includes(g.id))};
+        }
+    }else{
+        const a=document.getElementById('exportAllInspiration').checked;
+        f=`奇鼠妙想_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
+        if(a){
+            d={type:'inspirations',title:'奇鼠妙想',time:new Date().toLocaleString(),data:inspirations};
+        }else{
+            const cs=[...document.querySelectorAll('.export-item:checked')].filter(i=>i.dataset.type==='catalog').map(i=>Number(i.dataset.id));
+            const ss=[...document.querySelectorAll('.export-item:checked')].filter(i=>i.dataset.type==='subcatalog').map(i=>({cid:Number(i.dataset.catalog),sid:Number(i.dataset.id)}));
+            const r=[];
+            inspirations.forEach(ca=>{
+                if(cs.includes(ca.id))r.push({...ca});
+            });
+            ss.forEach(({cid,sid})=>{
+                const ca=inspirations.find(c=>c.id===cid);
+                if(!ca)return;
+                const s=ca.subCatalogs.find(x=>x.id===sid);
+                if(!s)return;
+                let t=r.find(x=>x.id===cid);
+                if(!t){t={...ca,subCatalogs:[]};r.push(t);}
+                t.subCatalogs.push(s);
+            });
+            d={type:'inspirations',title:'奇鼠妙想（精选）',time:new Date().toLocaleString(),data:r};
+        }
+    }
+    const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'});
+    const u=URL.createObjectURL(b);
+    const a=document.createElement('a');
+    a.href=u;a.download=f;a.click();URL.revokeObjectURL(u);
+    document.getElementById('exportModal').classList.add('hidden');
+    alert(`🎉 导出成功！文件已保存为「${f}」`);
+}
+
+function formatDate(s){
+    return new Date(s).toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+}
+</script>
+</body>
+</html>
